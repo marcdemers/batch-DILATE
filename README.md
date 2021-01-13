@@ -1,6 +1,7 @@
 # batch-DILATE
 A DILATE loss implementation that supports batches of timeseries for multi-step forecasting.
 
+The implementation is done in PyTorch and uses a callable `torch.nn.Module`.
 See example jupyter notebook for usage.
 
 To install python package use `git clone https://github.com/marcdemers/batch-DILATE`, then `cd batch-DILATE`, followed by `pip install .`
