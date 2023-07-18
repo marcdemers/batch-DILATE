@@ -2,11 +2,11 @@ import torch
 from numba import njit
 from torch.autograd import Function
 
-from .loss_utils import *
+from .loss_utils import numba_min, numba_min_hessian_product
 
 
-@njit
-def dtw_grad2(theta, gamma):
+@njit(cache=True)
+def dtw_grad(theta, gamma):
     b = theta.shape[0]
     c = theta.shape[1]
     m = theta.shape[2]
@@ -30,7 +30,7 @@ def dtw_grad2(theta, gamma):
             # array unification issues.
             # see https://github.com/numba/numba/issues/3931
             interm_v_reshaped = interm_v.reshape((b * c, 3))
-            v, out = my_min2(interm_v_reshaped, gamma)
+            v, out = numba_min(interm_v_reshaped, gamma)
             v_reshaped = v.reshape((b, c))
             out_reshaped = out.reshape((b, c, 3))
             Q[:, :, i, j] = out_reshaped
@@ -54,8 +54,8 @@ def dtw_grad2(theta, gamma):
     return V[:, :, m, n], E4[:, :, 1:m + 1, 1:n + 1], Q, E4
 
 
-@njit
-def dtw_hessian_prod2(theta, Z, Q, E, gamma):
+@njit(cache=True)
+def dtw_hessian_prod(theta, Z, Q, E, gamma):
     b = Q.shape[0]
     c = Q.shape[1]
     num_ch, m, n = Z.shape
@@ -76,7 +76,7 @@ def dtw_hessian_prod2(theta, Z, Q, E, gamma):
             v[:, :, 1] = V_dot[:, :, i - 1, j - 1]
             v[:, :, 2] = V_dot[:, :, i - 1, j]
 
-            Q_dot[:, :, i, j] = my_min_hessian_product2(Q[:, :, i, j], v, gamma)
+            Q_dot[:, :, i, j] = numba_min_hessian_product(Q[:, :, i, j], v, gamma)
 
     E2_dot = np.zeros((b, num_ch, m + 2, n + 2), dtype=np.float32)
 
@@ -97,7 +97,7 @@ def dtw_hessian_prod2(theta, Z, Q, E, gamma):
     return V_dot[:, :, m, n], E4_dot[:, :, 1:m + 1, 1:n + 1]
 
 
-class PathDTWBatch2(Function):
+class PathDTWBatch(Function):
     @staticmethod
     def forward(ctx, D, gamma):
         batch_size, num_channels, N, N = D.shape
@@ -109,15 +109,15 @@ class PathDTWBatch2(Function):
         Q_gpu = torch.zeros((batch_size, num_channels, N + 2, N + 2, 3)).to(device)
         E_gpu = torch.zeros((batch_size, num_channels, N + 2, N + 2)).to(device)
 
-        _, grad_cpu_k, Q_cpu_k, E_cpu_k = dtw_grad2(D_cpu[:, :, :, :].astype(np.float32),
-                                                    gamma)
+        _, grad_cpu_k, Q_cpu_k, E_cpu_k = dtw_grad(D_cpu[:, :, :, :].astype(np.float32),
+                                                   gamma)
 
         grad_gpu[:, :, :] = torch.FloatTensor(grad_cpu_k).to(device)
         Q_gpu[:, :, :, :] = torch.FloatTensor(Q_cpu_k).to(device)
         E_gpu[:, :, :] = torch.FloatTensor(E_cpu_k).to(device)
         ctx.save_for_backward(grad_gpu, D, Q_gpu, E_gpu, gamma_gpu)
 
-        return torch.mean(grad_gpu, dim=0)
+        return grad_gpu
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -134,11 +134,11 @@ class PathDTWBatch2(Function):
         batch_size, num_channels, N, N = D_cpu.shape
         Hessian = torch.zeros((batch_size, num_channels, N, N)).to(device)
 
-        _, hess_k = dtw_hessian_prod2(D_cpu[:, :, :, :].astype(np.float32),
-                                      Z.astype(np.float32),
-                                      Q_cpu[:, :, :, :, :].astype(np.float32),
-                                      E_cpu[:, :, :, :].astype(np.float32),
-                                      gamma)
+        _, hess_k = dtw_hessian_prod(D_cpu[:, :, :, :].astype(np.float32),
+                                     Z.astype(np.float32),
+                                     Q_cpu[:, :, :, :, :].astype(np.float32),
+                                     E_cpu[:, :, :, :].astype(np.float32),
+                                     gamma)
 
         Hessian[:, :, :, :] = torch.FloatTensor(hess_k).to(device)
 

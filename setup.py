@@ -10,7 +10,7 @@ with io.open(os.path.join(dir, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='batchdilate',
-      version='0.1',
+      version='0.2',
       description='An extension of the differentiable DILATE loss for multi-step timeseries predictions.',
       long_description=long_description,
       long_description_content_type='text/markdown',

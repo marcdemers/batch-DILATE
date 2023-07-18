@@ -32,7 +32,7 @@ def pairwise_distances_with_channels_and_batches(x, y=None):
     return torch.clamp(dist, 0.0, float('inf'))
 
 
-@njit
+@njit(cache=True)
 def compute_softdtw_batch_channel(D, gamma):
     batch_size = D.shape[0]
     num_channels = D.shape[1]
@@ -53,7 +53,7 @@ def compute_softdtw_batch_channel(D, gamma):
     return R
 
 
-@njit
+@njit(cache=True)
 def compute_softdtw_backward_batch_channel(D_, R, gamma):
     B = D_.shape[0]
     C = D_.shape[1]
@@ -97,7 +97,7 @@ class SoftDTWBatch(Function):
         R = torch.FloatTensor(compute_softdtw_batch_channel(D_[:, :, :, :].astype(np.float32),
                                                             g_)).to(dev)
 
-        total_loss = R[:, :, -2, -2].mean(0)
+        total_loss = R[:, :, -2, -2]
         ctx.save_for_backward(D, R, gamma)
         return total_loss
 
