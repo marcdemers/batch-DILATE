@@ -7,7 +7,7 @@ from . import soft_dtw
 
 
 class DTWShpTime(torch.nn.Module):
-    def __init__(self, alpha: int, gamma: int, reduction: str = "mean") -> None:
+    def __init__(self, alpha: float, gamma: float, reduction: str = "mean") -> None:
         """
         Batch-DILATE loss function, a batchwise extension of https://github.com/vincent-leguen/DILATE
 
