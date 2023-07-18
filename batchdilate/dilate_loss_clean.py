@@ -43,7 +43,7 @@ class DTWShpTime(torch.nn.Module):
 
         batch_size, N_channel, N_output = input.shape
 
-        D = dtw.pairwise_distances_with_channels_and_batches(
+        D = soft_dtw.pairwise_distances_with_channels_and_batches(
             target[:, :, :].reshape(batch_size * N_channel, N_output, 1).double(),
             input[:, :, :].reshape(batch_size * N_channel, N_output, 1).double()
         )
@@ -56,7 +56,7 @@ class DTWShpTime(torch.nn.Module):
         path_dtw = path_soft_dtw.PathDTWBatch.apply
         path = path_dtw(D, self.gamma)
 
-        Omega = dtw.pairwise_distances(torch.arange(1, N_output + 1).view(N_output, 1)).to(target.device)
+        Omega = soft_dtw.pairwise_distances(torch.arange(1, N_output + 1).view(N_output, 1)).to(target.device)
 
         Omega = Omega.repeat(N_channel, 1, 1)
         loss_temporal = torch.sum(path * Omega, dim=(2, 3)) / (N_output * N_output)
