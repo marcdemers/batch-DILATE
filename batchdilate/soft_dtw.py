@@ -120,6 +120,6 @@ class SoftDTWBatch(Function):
 
         E = torch.FloatTensor(E).to(dev)
 
-        out = torch.einsum("j, ijkl-> ijkl", grad_output, E)
+        out = torch.einsum("bc, bcxy-> bcxy", grad_output, E)
 
         return out, None

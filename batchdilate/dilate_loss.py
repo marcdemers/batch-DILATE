@@ -7,7 +7,7 @@ from . import soft_dtw
 
 
 class DTWShpTime(torch.nn.Module):
-    def __init__(self, alpha: float, gamma: float, reduction: str = "mean") -> None:
+    def __init__(self, alpha: float, gamma: float = 0.01, reduction: str = "mean") -> None:
         """
         Batch-DILATE loss function, a batchwise extension of https://github.com/vincent-leguen/DILATE
 
@@ -38,8 +38,8 @@ class DTWShpTime(torch.nn.Module):
         assert input.device == target.device, f"Device for input and target must be the same, but found {input.device} " \
                                               f"and {target.device}."
 
-        if not input.shape == target.shape:
-            input = torch.broadcast_to(input, target.shape)
+        assert input.shape == target.shape, f"Input shape ({input.shape}) and " \
+                                            f"target shape ({target.shape}) must match exactly!"
 
         batch_size, N_channel, N_output = input.shape
 

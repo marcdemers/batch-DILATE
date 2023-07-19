@@ -1,1 +1,1 @@
-from .dilate_loss_clean import DTWShpTime
+from .dilate_loss import DTWShpTime

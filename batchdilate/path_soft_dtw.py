@@ -57,9 +57,7 @@ def dtw_grad(theta, gamma):
 
 @njit(cache=True)
 def dtw_hessian_prod(theta, Z, Q, E, gamma):
-    b = Q.shape[0]
-    c = Q.shape[1]
-    num_ch, m, n = Z.shape
+    b, num_ch, m, n = Z.shape
 
     V_dot = np.zeros((b, num_ch, m + 1, n + 1), dtype=np.float32)
     V_dot[:, :, 0, 0] = 0
@@ -67,7 +65,7 @@ def dtw_hessian_prod(theta, Z, Q, E, gamma):
     Q_dot = np.zeros((b, num_ch, m + 2, n + 2, 3), dtype=np.float32)
     for i in range(1, m + 1):
         for j in range(1, n + 1):
-            V_dot[:, :, i, j] = Z[:, i - 1, j - 1] + \
+            V_dot[:, :, i, j] = Z[:, :, i - 1, j - 1] + \
                                 Q[:, :, i, j, 0] * V_dot[:, :, i, j - 1] + \
                                 Q[:, :, i, j, 1] * V_dot[:, :, i - 1, j - 1] + \
                                 Q[:, :, i, j, 2] * V_dot[:, :, i - 1, j]
